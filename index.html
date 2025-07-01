@@ -1,9 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Advanced Dash Cam</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -29,7 +32,7 @@
     body.night video {
       filter: brightness(1.5) contrast(1.2);
     }
-    .controls {
+    .toolbar {
       position: absolute;
       bottom: 20px;
       left: 50%;
@@ -71,8 +74,11 @@
         font-size: 14px;
       }
     }
-    #info {
+    #info, #settingsPanel, #motion-indicator, #saved-list, #map {
       position: absolute;
+      z-index: 3;
+    }
+    #info {
       top: 10px;
       right: 10px;
       background: rgba(20, 20, 20, 0.7);
@@ -82,7 +88,6 @@
       text-align: right;
     }
     #motion-indicator {
-      position: absolute;
       top: 10px;
       left: 10px;
       padding: 8px 12px;
@@ -91,10 +96,8 @@
       border-radius: 5px;
       font-weight: bold;
       display: none;
-      z-index: 2;
     }
     #saved-list {
-      position: absolute;
       bottom: 90px;
       left: 10px;
       background: rgba(0, 0, 0, 0.8);
@@ -103,7 +106,6 @@
       max-height: 200px;
       overflow-y: auto;
       font-size: 14px;
-      z-index: 2;
     }
     #saved-list a {
       color: #00ffcc;
@@ -111,175 +113,225 @@
       display: block;
       margin-bottom: 5px;
     }
+    #settingsPanel {
+      bottom: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 10px;
+      border-radius: 10px;
+      color: white;
+      display: none;
+    }
+    #map {
+      bottom: 100px;
+      right: 10px;
+      width: 200px;
+      height: 200px;
+      border-radius: 10px;
+      display: none;
+    }
   </style>
 </head>
 <body>
 
   <div id="motion-indicator">⚠️ Motion Detected</div>
   <video id="video" autoplay muted playsinline></video>
-
-  <div class="controls">
-    <button onclick="startRecording()">Start</button>
-    <button onclick="stopRecording()">Stop</button>
-    <button onclick="downloadRecording()">Download</button>
-    <button onclick="saveToStorage()">Save</button>
-    <button onclick="toggleNightMode()">Night Mode</button>
+  <div class="toolbar">
+    <button onclick="startRecording()"><i class="fas fa-circle"></i> Start</button>
+    <button onclick="stopRecording()"><i class="fas fa-stop"></i> Stop</button>
+    <button onclick="downloadRecording()"><i class="fas fa-download"></i> Download</button>
+    <button onclick="saveToStorage()"><i class="fas fa-save"></i> Save</button>
+    <button onclick="toggleNightMode()"><i class="fas fa-moon"></i> Night Mode</button>
+    <button onclick="toggleSettings()"><i class="fas fa-cog"></i> Settings</button>
   </div>
-
   <div id="info">
     <div>Speed: <span id="speed">0</span> km/h</div>
     <div>Distance: <span id="distance">0</span> km</div>
     <div>Duration: <span id="time">00:00</span></div>
   </div>
-
   <div id="saved-list">
     <strong>Saved Videos:</strong>
     <div id="videos"></div>
   </div>
-
+  <div id="settingsPanel">
+    <label>Video Quality:
+      <select id="videoQuality">
+        <option value="high">High</option>
+        <option value="medium">Medium</option>
+        <option value="low">Low</option>
+      </select>
+    </label><br><br>
+    <label><input type="checkbox" id="autoSave" checked> Auto Save Incidents</label><br>
+    <label><input type="checkbox" id="showMap"> Show Map</label><br>
+  </div>
   <canvas id="motionCanvas" style="display:none;"></canvas>
-
+  <div id="map"></div>
+    // Your merged JavaScript code will be appended here in the next update
   <script>
-    const video = document.getElementById('video');
-    const motionCanvas = document.getElementById('motionCanvas');
-    const motionCtx = motionCanvas.getContext('2d');
-    const motionIndicator = document.getElementById('motion-indicator');
-    const speedEl = document.getElementById('speed');
-    const distanceEl = document.getElementById('distance');
-    const timeEl = document.getElementById('time');
-    const videosList = document.getElementById('videos');
+let mediaRecorder, recordedChunks = [], recordingStartTime, watchId;
+const video = document.getElementById('video');
+const motionCanvas = document.getElementById('motionCanvas');
+const motionCtx = motionCanvas.getContext('2d');
+const motionIndicator = document.getElementById('motion-indicator');
+const speedEl = document.getElementById('speed');
+const distanceEl = document.getElementById('distance');
+const timeEl = document.getElementById('time');
+const videosList = document.getElementById('videos');
+const mapContainer = document.getElementById('map');
+const showMapCheckbox = document.getElementById('showMap');
+let startTime, startCoords, map, userMarker;
+let totalDistance = 0;
 
-    let stream, mediaRecorder, chunks = [];
-    let watchId, startTime, timerInterval;
-    let lastCoords = null, totalDistance = 0;
-    let recordingBlob = null, lastFrame = null;
+navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+  .then(stream => {
+    video.srcObject = stream;
+    setupMotionDetection(stream);
+    setupGeolocation();
+  })
+  .catch(err => alert("Camera access denied: " + err.message));
 
-    async function initCamera() {
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: "environment" } }, audio: true
-        });
-        video.srcObject = stream;
-        detectMotion();
-        loadSavedVideos();
-      } catch (err) {
-        alert("Camera or microphone access denied.");
-        console.error(err);
+function setupMotionDetection(stream) {
+  const track = stream.getVideoTracks()[0];
+  const imageCapture = new ImageCapture(track);
+
+  setInterval(async () => {
+    try {
+      const bitmap = await imageCapture.grabFrame();
+      motionCanvas.width = bitmap.width;
+      motionCanvas.height = bitmap.height;
+
+      motionCtx.drawImage(bitmap, 0, 0);
+      const frame = motionCtx.getImageData(0, 0, bitmap.width, bitmap.height);
+
+      if (detectMotion(frame)) {
+        motionIndicator.style.display = 'block';
+        if (document.getElementById('autoSave').checked) saveToStorage();
+      } else {
+        motionIndicator.style.display = 'none';
       }
+    } catch (e) {}
+  }, 1000);
+}
+
+let lastFrame;
+function detectMotion(currentFrame) {
+  if (!lastFrame) {
+    lastFrame = currentFrame;
+    return false;
+  }
+
+  let changedPixels = 0;
+  for (let i = 0; i < currentFrame.data.length; i += 4) {
+    let diff = Math.abs(currentFrame.data[i] - lastFrame.data[i]);
+    if (diff > 25) changedPixels++;
+  }
+
+  lastFrame = currentFrame;
+  return changedPixels > 10000;
+}
+
+function startRecording() {
+  const stream = video.srcObject;
+  mediaRecorder = new MediaRecorder(stream);
+  recordedChunks = [];
+  recordingStartTime = Date.now();
+  startTime = Date.now();
+  mediaRecorder.ondataavailable = e => recordedChunks.push(e.data);
+  mediaRecorder.onstop = () => {
+    const blob = new Blob(recordedChunks, { type: "video/webm" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `dashcam_${new Date().toISOString()}.webm`;
+    a.innerText = a.download;
+    videosList.appendChild(a);
+  };
+  mediaRecorder.start();
+  updateTimer();
+}
+
+function stopRecording() {
+  if (mediaRecorder && mediaRecorder.state !== "inactive") {
+    mediaRecorder.stop();
+  }
+}
+
+function downloadRecording() {
+  stopRecording(); // Ensures recording is stopped before download
+}
+
+function saveToStorage() {
+  if (!recordedChunks.length) return;
+  const blob = new Blob(recordedChunks, { type: "video/webm" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `incident_${new Date().toISOString()}.webm`;
+  a.innerText = a.download;
+  videosList.appendChild(a);
+  recordedChunks = [];
+}
+
+function toggleNightMode() {
+  document.body.classList.toggle('night');
+}
+
+function toggleSettings() {
+  const panel = document.getElementById('settingsPanel');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+function updateTimer() {
+  const interval = setInterval(() => {
+    if (!startTime) return;
+    const now = Date.now();
+    const diff = now - startTime;
+    const mins = Math.floor(diff / 60000);
+    const secs = Math.floor((diff % 60000) / 1000);
+    timeEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  }, 1000);
+}
+
+function setupGeolocation() {
+  if (!navigator.geolocation) return;
+
+  map = L.map(mapContainer).setView([0, 0], 15);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+  userMarker = L.marker([0, 0]).addTo(map);
+
+  watchId = navigator.geolocation.watchPosition(pos => {
+    const { latitude, longitude, speed } = pos.coords;
+    if (!startCoords) startCoords = pos.coords;
+
+    if (userMarker) userMarker.setLatLng([latitude, longitude]);
+    if (map) map.setView([latitude, longitude], 15);
+
+    if (startCoords) {
+      const d = getDistance(startCoords.latitude, startCoords.longitude, latitude, longitude);
+      totalDistance += d;
+      distanceEl.textContent = totalDistance.toFixed(2);
+      startCoords = pos.coords;
     }
 
-    function startRecording() {
-      chunks = [];
-      mediaRecorder = new MediaRecorder(stream);
-      mediaRecorder.ondataavailable = e => chunks.push(e.data);
-      mediaRecorder.onstop = () => recordingBlob = new Blob(chunks, { type: 'video/webm' });
-      mediaRecorder.start();
-      startTime = Date.now();
-      startTimer();
-      watchLocation();
-    }
+    const kmph = (speed || 0) * 3.6;
+    speedEl.textContent = kmph.toFixed(1);
+  }, err => console.warn(err), { enableHighAccuracy: true });
 
-    function stopRecording() {
-      if (mediaRecorder && mediaRecorder.state === "recording") {
-        mediaRecorder.stop();
-        clearInterval(timerInterval);
-        if (watchId) navigator.geolocation.clearWatch(watchId);
-      }
-    }
+  showMapCheckbox.addEventListener('change', () => {
+    mapContainer.style.display = showMapCheckbox.checked ? 'block' : 'none';
+  });
+}
 
-    function downloadRecording() {
-      if (!recordingBlob) return alert("No recording to download.");
-      const url = URL.createObjectURL(recordingBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'dashcam_' + Date.now() + '.webm';
-      a.click();
-    }
-
-    function saveToStorage() {
-      if (!recordingBlob) return alert("Nothing to save.");
-      const id = 'dashcam_' + Date.now();
-      const reader = new FileReader();
-      reader.onload = function () {
-        localStorage.setItem(id, reader.result);
-        loadSavedVideos();
-      };
-      reader.readAsDataURL(recordingBlob);
-    }
-
-    function loadSavedVideos() {
-      videosList.innerHTML = '';
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key.startsWith('dashcam_')) {
-          const url = localStorage.getItem(key);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = key + '.webm';
-          a.innerText = '📼 ' + key;
-          videosList.appendChild(a);
-        }
-      }
-    }
-
-    function toggleNightMode() {
-      document.body.classList.toggle("night");
-    }
-
-    function startTimer() {
-      timeEl.textContent = "00:00";
-      timerInterval = setInterval(() => {
-        const diff = Math.floor((Date.now() - startTime) / 1000);
-        const mins = String(Math.floor(diff / 60)).padStart(2, '0');
-        const secs = String(diff % 60).padStart(2, '0');
-        timeEl.textContent = `${mins}:${secs}`;
-      }, 1000);
-    }
-
-    function watchLocation() {
-      if (!navigator.geolocation) return;
-      watchId = navigator.geolocation.watchPosition(pos => {
-        const { latitude, longitude, speed } = pos.coords;
-        if (lastCoords) {
-          const d = haversine(lastCoords.lat, lastCoords.lon, latitude, longitude);
-          totalDistance += d;
-        }
-        lastCoords = { lat: latitude, lon: longitude };
-        speedEl.textContent = ((speed || 0) * 3.6).toFixed(1);
-        distanceEl.textContent = totalDistance.toFixed(2);
-      }, err => console.warn("GPS error:", err), { enableHighAccuracy: true });
-    }
-
-    function haversine(lat1, lon1, lat2, lon2) {
-      const R = 6371;
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
-      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    }
-
-    function detectMotion() {
-      setInterval(() => {
-        if (!video.videoWidth || !video.videoHeight) return;
-        motionCanvas.width = video.videoWidth;
-        motionCanvas.height = video.videoHeight;
-        motionCtx.drawImage(video, 0, 0, motionCanvas.width, motionCanvas.height);
-        const frame = motionCtx.getImageData(0, 0, motionCanvas.width, motionCanvas.height);
-        if (lastFrame) {
-          let changed = 0;
-          for (let i = 0; i < frame.data.length; i += 4) {
-            if (Math.abs(frame.data[i] - lastFrame.data[i]) > 20) changed++;
-          }
-          if (changed > 10000) {
-            motionIndicator.style.display = 'block';
-            setTimeout(() => motionIndicator.style.display = 'none', 1000);
-          }
-        }
-        lastFrame = frame;
-      }, 700);
-    }
-
-    window.onload = initCamera;
-  </script>
+function getDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) *
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+</script>
 </body>
 </html>
