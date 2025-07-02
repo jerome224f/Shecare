@@ -74,7 +74,7 @@
         font-size: 14px;
       }
     }
-    #info, #settingsPanel, #motion-indicator, #saved-list, #map {
+    #info, #settingsPanel, #motion-indicator, #saved-list, #map, #odometer {
       position: absolute;
       z-index: 3;
     }
@@ -130,10 +130,19 @@
       border-radius: 10px;
       display: none;
     }
+    #odometer {
+      top: 50px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #00ff00;
+    }
   </style>
 </head>
 <body>
-
   <div id="motion-indicator">⚠️ Motion Detected</div>
   <video id="video" autoplay muted playsinline></video>
   <div class="toolbar">
@@ -149,6 +158,7 @@
     <div>Distance: <span id="distance">0</span> km</div>
     <div>Duration: <span id="time">00:00</span></div>
   </div>
+  <div id="odometer">ODO: <span id="odometerValue">0.00</span> km</div>
   <div id="saved-list">
     <strong>Saved Videos:</strong>
     <div id="videos"></div>
@@ -166,23 +176,19 @@
   </div>
   <canvas id="motionCanvas" style="display:none;"></canvas>
   <div id="map"></div>
-    // Your merged JavaScript code will be appended here in the next update
   <script>
-let mediaRecorder, recordedChunks = [], recordingStartTime, watchId;
-const video = document.getElementById('video');
-const motionCanvas = document.getElementById('motionCanvas');
-const motionCtx = motionCanvas.getContext('2d');
-const motionIndicator = document.getElementById('motion-indicator');
-const speedEl = document.getElementById('speed');
-const distanceEl = document.getElementById('distance');
-const timeEl = document.getElementById('time');
-const videosList = document.getElementById('videos');
-const mapContainer = document.getElementById('map');
-const showMapCheckbox = document.getElementById('showMap');
-let startTime, startCoords, map, userMarker;
-let totalDistance = 0;
-
-navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+    let mediaRecorder, recordedChunks = [], startTime, watchId;
+    let totalDistance = 0;
+    const video = document.getElementById('video');
+    const speedEl = document.getElementById('speed');
+    const distanceEl = document.getElementById('distance');
+    const timeEl = document.getElementById('time');
+    const videosList = document.getElementById('videos');
+    const motionCanvas = document.getElementById('motionCanvas');
+    const motionCtx = motionCanvas.getContext('2d');
+    const motionIndicator = document.getElementById('motion-indicator');
+    const odometerEl = document.getElementById('odometerValue');
+    let lastCoords;navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } }, audio: true })
   .then(stream => {
     video.srcObject = stream;
     setupMotionDetection(stream);
@@ -193,16 +199,13 @@ navigator.mediaDevices.getUserMedia({ video: true, audio: true })
 function setupMotionDetection(stream) {
   const track = stream.getVideoTracks()[0];
   const imageCapture = new ImageCapture(track);
-
   setInterval(async () => {
     try {
       const bitmap = await imageCapture.grabFrame();
       motionCanvas.width = bitmap.width;
       motionCanvas.height = bitmap.height;
-
       motionCtx.drawImage(bitmap, 0, 0);
       const frame = motionCtx.getImageData(0, 0, bitmap.width, bitmap.height);
-
       if (detectMotion(frame)) {
         motionIndicator.style.display = 'block';
         if (document.getElementById('autoSave').checked) saveToStorage();
@@ -219,13 +222,11 @@ function detectMotion(currentFrame) {
     lastFrame = currentFrame;
     return false;
   }
-
   let changedPixels = 0;
   for (let i = 0; i < currentFrame.data.length; i += 4) {
     let diff = Math.abs(currentFrame.data[i] - lastFrame.data[i]);
     if (diff > 25) changedPixels++;
   }
-
   lastFrame = currentFrame;
   return changedPixels > 10000;
 }
@@ -234,8 +235,6 @@ function startRecording() {
   const stream = video.srcObject;
   mediaRecorder = new MediaRecorder(stream);
   recordedChunks = [];
-  recordingStartTime = Date.now();
-  startTime = Date.now();
   mediaRecorder.ondataavailable = e => recordedChunks.push(e.data);
   mediaRecorder.onstop = () => {
     const blob = new Blob(recordedChunks, { type: "video/webm" });
@@ -247,17 +246,16 @@ function startRecording() {
     videosList.appendChild(a);
   };
   mediaRecorder.start();
+  startTime = Date.now();
   updateTimer();
 }
 
 function stopRecording() {
-  if (mediaRecorder && mediaRecorder.state !== "inactive") {
-    mediaRecorder.stop();
-  }
+  if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
 }
 
 function downloadRecording() {
-  stopRecording(); // Ensures recording is stopped before download
+  stopRecording();
 }
 
 function saveToStorage() {
@@ -284,8 +282,7 @@ function toggleSettings() {
 function updateTimer() {
   const interval = setInterval(() => {
     if (!startTime) return;
-    const now = Date.now();
-    const diff = now - startTime;
+    const diff = Date.now() - startTime;
     const mins = Math.floor(diff / 60000);
     const secs = Math.floor((diff % 60000) / 1000);
     timeEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
@@ -294,32 +291,28 @@ function updateTimer() {
 
 function setupGeolocation() {
   if (!navigator.geolocation) return;
-
-  map = L.map(mapContainer).setView([0, 0], 15);
+  const map = L.map('map').setView([0, 0], 15);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-  userMarker = L.marker([0, 0]).addTo(map);
+  const marker = L.marker([0, 0]).addTo(map);
+
+  document.getElementById('showMap').addEventListener('change', e => {
+    document.getElementById('map').style.display = e.target.checked ? 'block' : 'none';
+  });
 
   watchId = navigator.geolocation.watchPosition(pos => {
     const { latitude, longitude, speed } = pos.coords;
-    if (!startCoords) startCoords = pos.coords;
+    marker.setLatLng([latitude, longitude]);
+    map.setView([latitude, longitude], 15);
 
-    if (userMarker) userMarker.setLatLng([latitude, longitude]);
-    if (map) map.setView([latitude, longitude], 15);
-
-    if (startCoords) {
-      const d = getDistance(startCoords.latitude, startCoords.longitude, latitude, longitude);
+    if (lastCoords) {
+      const d = getDistance(lastCoords.latitude, lastCoords.longitude, latitude, longitude);
       totalDistance += d;
       distanceEl.textContent = totalDistance.toFixed(2);
-      startCoords = pos.coords;
+      odometerEl.textContent = totalDistance.toFixed(2);
     }
-
-    const kmph = (speed || 0) * 3.6;
-    speedEl.textContent = kmph.toFixed(1);
+    lastCoords = pos.coords;
+    speedEl.textContent = ((speed || 0) * 3.6).toFixed(1);
   }, err => console.warn(err), { enableHighAccuracy: true });
-
-  showMapCheckbox.addEventListener('change', () => {
-    mapContainer.style.display = showMapCheckbox.checked ? 'block' : 'none';
-  });
 }
 
 function getDistance(lat1, lon1, lat2, lon2) {
@@ -332,6 +325,7 @@ function getDistance(lat1, lon1, lat2, lon2) {
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   return R * c;
 }
-</script>
+
+  </script>
 </body>
 </html>
