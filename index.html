@@ -1,331 +1,584 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth overflow-x-hidden">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Advanced Dash Cam</title>
-  <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>SHE CARE – Sree Alagar Enterprises</title>
+  <!-- Favicon -->
+  <link rel="shortcut icon" href="https://sreealagarenterprises.in/favicon.ico" type="image/x-icon">
+  <link rel="apple-touch-icon" sizes="180x180" href="https://sreealagarenterprises.in/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="https://sreealagarenterprises.in/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="https://sreealagarenterprises.in/favicon-16x16.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js" defer></script>
+  <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
   <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background: #0f0f0f;
-      color: #fff;
+    /* Enhanced Styles */
+    :root {
+      --primary: #10b981;
+      --primary-dark: #059669;
+      --secondary: #f59e0b;
+      --light: #f0fdf4;
+      --dark: #0f172a;
+    }
+    
+    /* Logo Circle */
+    .logo-circle {
+      width: 60px;
+      height: 60px;
+      border-radius: 9999px;
       overflow: hidden;
-      transition: background 0.5s, color 0.5s;
+      border: 2px solid var(--primary);
+      transition: all 0.3s ease;
     }
-    body.night {
-      background: #f5f5f5;
-      color: #000;
+    .logo-circle:hover {
+      transform: scale(1.05);
+      border-color: var(--secondary);
     }
-    video {
-      width: 100vw;
-      height: 100vh;
+    .logo-circle img {
+      width: 100%;
+      height: 100%;
       object-fit: cover;
-      filter: brightness(1);
-      background: #000;
-      transition: filter 0.4s ease;
     }
-    body.night video {
-      filter: brightness(1.5) contrast(1.2);
+    
+    /* Floating Background Animation */
+    @keyframes float1 {
+      0% { transform: translateY(0); opacity: 0.7; }
+      100% { transform: translateY(-200vh); opacity: 0.1; }
     }
-    .toolbar {
+    .floating-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: -1;
+    }
+    .floating-element {
       position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 10px;
-      background: rgba(0, 0, 0, 0.6);
-      padding: 12px;
-      border-radius: 12px;
-      z-index: 2;
-      max-width: 95vw;
+      border-radius: 50%;
+      background: linear-gradient(145deg, var(--primary), var(--light));
+      opacity: 0.15;
+      animation-duration: 15s;
+      animation-iteration-count: infinite;
+      animation-timing-function: linear;
     }
-    button {
-      flex: 1 1 45%;
-      min-width: 120px;
-      background: linear-gradient(to right, #1f6feb, #265ecf);
-      color: white;
+    
+    /* WhatsApp Button Customization */
+    #whatsapp-button img {
+      transition: transform 0.3s ease;
+    }
+    #whatsapp-button:hover img {
+      transform: scale(1.1);
+    }
+    
+    /* Catalogue PDF Styling */
+    iframe[title="Catalogue PDF"] {
       border: none;
-      padding: 12px 16px;
-      border-radius: 8px;
-      font-size: 15px;
-      cursor: pointer;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
     }
-    button:hover {
-      box-shadow: 0 6px 12px rgba(0,0,0,0.4);
-      transform: translateY(-2px);
+    
+    /* Premium Card Styles */
+    .premium-card {
+      background: white;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      transition: all 0.3s ease;
+      position: relative;
+      z-index: 1;
     }
-    button:active {
-      transform: scale(0.96);
-      box-shadow: 0 3px 5px rgba(0,0,0,0.2);
+    .premium-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 15px 35px rgba(0,0,0,0.12);
     }
-    @media (max-width: 480px) {
-      button {
-        flex: 1 1 100%;
-        font-size: 14px;
+    .premium-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      z-index: 2;
+    }
+    
+    /* Responsive tweaks for small screens */
+    @media (max-width: 768px) {
+      .text-4xl {
+        font-size: 1.875rem;
+      }
+      .text-5xl {
+        font-size: 2.25rem;
+      }
+      .min-h-screen {
+        min-height: 80vh;
       }
     }
-    #info, #settingsPanel, #motion-indicator, #saved-list, #map, #odometer {
-      position: absolute;
-      z-index: 3;
+    
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
     }
-    #info {
-      top: 10px;
-      right: 10px;
-      background: rgba(20, 20, 20, 0.7);
-      padding: 10px 15px;
-      border-radius: 8px;
-      font-size: 14px;
-      text-align: right;
+    ::-webkit-scrollbar-track {
+      background: var(--light);
     }
-    #motion-indicator {
-      top: 10px;
-      left: 10px;
-      padding: 8px 12px;
-      background: red;
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, var(--primary), var(--secondary));
+      border-radius: 4px;
+    }
+    
+    /* Gradient Text */
+    .gradient-text {
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: inline-block;
+    }
+    
+    /* Language Switcher */
+    .language-switcher {
+      position: fixed;
+      bottom: 24px;
+      left: 24px;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .lang-btn {
+      padding: 8px 16px;
+      border-radius: 30px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .lang-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+    }
+    
+    /* Scroll to Top Button */
+    .scroll-top {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
       color: white;
-      border-radius: 5px;
-      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      opacity: 0;
+      visibility: hidden;
+      z-index: 100;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .scroll-top.visible {
+      opacity: 1;
+      visibility: visible;
+    }
+    .scroll-top:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    }
+    
+    /* Testimonial Slider */
+    .testimonial-slider {
+      position: relative;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .testimonial-slide {
       display: none;
+      animation: fadeIn 0.8s ease;
     }
-    #saved-list {
-      bottom: 90px;
-      left: 10px;
-      background: rgba(0, 0, 0, 0.8);
-      padding: 10px;
-      border-radius: 6px;
-      max-height: 200px;
-      overflow-y: auto;
-      font-size: 14px;
-    }
-    #saved-list a {
-      color: #00ffcc;
-      text-decoration: underline;
+    .testimonial-slide.active {
       display: block;
-      margin-bottom: 5px;
     }
-    #settingsPanel {
-      bottom: 20px;
-      right: 20px;
-      background: rgba(0, 0, 0, 0.8);
-      padding: 10px;
-      border-radius: 10px;
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .slider-nav {
+      display: flex;
+      justify-content: center;
+      margin-top: 30px;
+      gap: 12px;
+    }
+    .slider-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ddd;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .slider-dot.active {
+      background: var(--primary);
+      transform: scale(1.2);
+    }
+    
+    /* Newsletter Form */
+    .newsletter-form {
+      position: relative;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    .newsletter-input {
+      padding: 16px 24px;
+      border-radius: 50px;
+      width: 100%;
+      border: 1px solid #ddd;
+      transition: all 0.3s ease;
+      font-size: 16px;
+    }
+    .newsletter-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+    .newsletter-btn {
+      position: absolute;
+      right: 5px;
+      top: 5px;
+      padding: 11px 24px;
+      border-radius: 50px;
+      background: linear-gradient(90deg, var(--primary), var(--primary-dark));
       color: white;
-      display: none;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
     }
-    #map {
-      bottom: 100px;
-      right: 10px;
-      width: 200px;
-      height: 200px;
-      border-radius: 10px;
-      display: none;
+    .newsletter-btn:hover {
+      background: linear-gradient(90deg, var(--primary-dark), var(--primary));
+      transform: scale(1.02);
     }
-    #odometer {
-      top: 50px;
-      right: 10px;
-      background: rgba(0, 0, 0, 0.6);
-      padding: 8px 12px;
+    
+    /* Social Icons */
+    .social-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary);
+      transition: all 0.3s ease;
+    }
+    .social-icon:hover {
+      background: var(--primary);
+      color: white;
+      transform: translateY(-3px);
+    }
+    
+    /* Gallery Grid */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    .gallery-item {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+    .gallery-item img {
+      width: 100%;
+      height: 260px;
+      object-fit: cover;
+      transition: all 0.5s ease;
+    }
+    .gallery-item:hover img {
+      transform: scale(1.05);
+    }
+    .gallery-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+      padding: 20px;
+      color: white;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s ease;
+    }
+    .gallery-item:hover .gallery-overlay {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    /* Lightbox */
+    .lightbox {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.9);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+    .lightbox.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    .lightbox-content {
+      max-width: 90%;
+      max-height: 90%;
+      position: relative;
+    }
+    .lightbox-img {
+      max-width: 100%;
+      max-height: 80vh;
       border-radius: 8px;
-      font-size: 18px;
-      font-weight: bold;
-      color: #00ff00;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    }
+    .lightbox-close {
+      position: absolute;
+      top: -40px;
+      right: 0;
+      color: white;
+      font-size: 36px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .lightbox-close:hover {
+      color: var(--primary);
+    }
+    .lightbox-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 20px;
+    }
+    .lightbox-btn {
+      background: rgba(255,255,255,0.2);
+      color: white;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .lightbox-btn:hover {
+      background: var(--primary);
     }
   </style>
 </head>
-<body>
-  <div id="motion-indicator">⚠️ Motion Detected</div>
-  <video id="video" autoplay muted playsinline></video>
-  <div class="toolbar">
-    <button onclick="startRecording()"><i class="fas fa-circle"></i> Start</button>
-    <button onclick="stopRecording()"><i class="fas fa-stop"></i> Stop</button>
-    <button onclick="downloadRecording()"><i class="fas fa-download"></i> Download</button>
-    <button onclick="saveToStorage()"><i class="fas fa-save"></i> Save</button>
-    <button onclick="toggleNightMode()"><i class="fas fa-moon"></i> Night Mode</button>
-    <button onclick="toggleSettings()"><i class="fas fa-cog"></i> Settings</button>
+<body class="bg-white text-gray-800 overflow-x-hidden">
+  <!-- Floating Background Elements -->
+  <div class="floating-bg">
+    <div class="floating-element w-64 h-64 -left-32 -top-32" style="animation-name: float1; animation-duration: 25s;"></div>
+    <div class="floating-element w-48 h-48 right-20 top-1/4" style="animation-name: float1; animation-duration: 30s; animation-delay: 2s;"></div>
+    <div class="floating-element w-36 h-36 left-1/4 bottom-32" style="animation-name: float1; animation-duration: 35s; animation-delay: 5s;"></div>
   </div>
-  <div id="info">
-    <div>Speed: <span id="speed">0</span> km/h</div>
-    <div>Distance: <span id="distance">0</span> km</div>
-    <div>Duration: <span id="time">00:00</span></div>
-  </div>
-  <div id="odometer">ODO: <span id="odometerValue">0.00</span> km</div>
-  <div id="saved-list">
-    <strong>Saved Videos:</strong>
-    <div id="videos"></div>
-  </div>
-  <div id="settingsPanel">
-    <label>Video Quality:
-      <select id="videoQuality">
-        <option value="high">High</option>
-        <option value="medium">Medium</option>
-        <option value="low">Low</option>
-      </select>
-    </label><br><br>
-    <label><input type="checkbox" id="autoSave" checked> Auto Save Incidents</label><br>
-    <label><input type="checkbox" id="showMap"> Show Map</label><br>
-  </div>
-  <canvas id="motionCanvas" style="display:none;"></canvas>
-  <div id="map"></div>
-  <script>
-    let mediaRecorder, recordedChunks = [], startTime, watchId;
-    let totalDistance = 0;
-    const video = document.getElementById('video');
-    const speedEl = document.getElementById('speed');
-    const distanceEl = document.getElementById('distance');
-    const timeEl = document.getElementById('time');
-    const videosList = document.getElementById('videos');
-    const motionCanvas = document.getElementById('motionCanvas');
-    const motionCtx = motionCanvas.getContext('2d');
-    const motionIndicator = document.getElementById('motion-indicator');
-    const odometerEl = document.getElementById('odometerValue');
-    let lastCoords;navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } }, audio: true })
-  .then(stream => {
-    video.srcObject = stream;
-    setupMotionDetection(stream);
-    setupGeolocation();
-  })
-  .catch(err => alert("Camera access denied: " + err.message));
 
-function setupMotionDetection(stream) {
-  const track = stream.getVideoTracks()[0];
-  const imageCapture = new ImageCapture(track);
-  setInterval(async () => {
-    try {
-      const bitmap = await imageCapture.grabFrame();
-      motionCanvas.width = bitmap.width;
-      motionCanvas.height = bitmap.height;
-      motionCtx.drawImage(bitmap, 0, 0);
-      const frame = motionCtx.getImageData(0, 0, bitmap.width, bitmap.height);
-      if (detectMotion(frame)) {
-        motionIndicator.style.display = 'block';
-        if (document.getElementById('autoSave').checked) saveToStorage();
-      } else {
-        motionIndicator.style.display = 'none';
-      }
-    } catch (e) {}
-  }, 1000);
-}
+  <!-- Navbar -->
+  <nav class="bg-white shadow fixed w-full z-50 left-0 right-0" x-data="{ open: false }">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+      <div class="flex items-center space-x-3">
+        <div class="logo-circle">
+          <img src="logo.jpg" alt="SHE CARE Logo" />
+        </div>
+        <div>
+          <div class="text-xl md:text-2xl font-bold text-green-600">SHE CARE</div>
+          <div class="text-sm text-yellow-500">Sree Alagar Enterprises</div>
+        </div>
+      </div>
+      <div class="md:hidden">
+        <button @click="open = !open" class="text-green-600 focus:outline-none" aria-label="Toggle menu">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" x-show="!open">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" x-show="open">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="hidden md:flex space-x-4">
+        <a href="#about" class="hover:text-green-600 transition">About</a>
+        <a href="#services" class="hover:text-green-600 transition">Services</a>
+        <a href="#achievements" class="hover:text-green-600 transition">Achievements</a>
+        <a href="#gallery" class="hover:text-green-600 transition">Gallery</a>
+        <a href="#contact" class="hover:text-green-600 transition">Contact</a>
+        <button onclick="document.getElementById('enquiry').scrollIntoView({ behavior: 'smooth' })" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">Enquiry</button>
+      </div>
+    </div>
 
-let lastFrame;
-function detectMotion(currentFrame) {
-  if (!lastFrame) {
-    lastFrame = currentFrame;
-    return false;
-  }
-  let changedPixels = 0;
-  for (let i = 0; i < currentFrame.data.length; i += 4) {
-    let diff = Math.abs(currentFrame.data[i] - lastFrame.data[i]);
-    if (diff > 25) changedPixels++;
-  }
-  lastFrame = currentFrame;
-  return changedPixels > 10000;
-}
+    <!-- Mobile Menu -->
+    <div class="md:hidden px-4 pt-2 pb-4 space-y-2 bg-white shadow" x-show="open" x-transition @click.away="open = false">
+      <a href="#about" @click="open = false" class="block hover:text-green-600 transition">About</a>
+      <a href="#services" @click="open = false" class="block hover:text-green-600 transition">Services</a>
+      <a href="#achievements" @click="open = false" class="block hover:text-green-600 transition">Achievements</a>
+      <a href="#gallery" @click="open = false" class="block hover:text-green-600 transition">Gallery</a>
+      <a href="#contact" @click="open = false" class="block hover:text-green-600 transition">Contact</a>
+      <button @click="open = false; document.getElementById('enquiry').scrollIntoView({ behavior: 'smooth' })" class="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">Enquiry</button>
+    </div>
+  </nav>
 
-function startRecording() {
-  const stream = video.srcObject;
-  mediaRecorder = new MediaRecorder(stream);
-  recordedChunks = [];
-  mediaRecorder.ondataavailable = e => recordedChunks.push(e.data);
-  mediaRecorder.onstop = () => {
-    const blob = new Blob(recordedChunks, { type: "video/webm" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `dashcam_${new Date().toISOString()}.webm`;
-    a.innerText = a.download;
-    videosList.appendChild(a);
-  };
-  mediaRecorder.start();
-  startTime = Date.now();
-  updateTimer();
-}
+  <!-- Hero Section -->
+  <section class="pt-36 md:pt-40 bg-gradient-to-br from-green-50 to-amber-50 text-center px-4 min-h-screen flex items-center overflow-x-hidden">
+    <div class="container mx-auto" data-aos="fade-up">
+      <h1 class="text-4xl md:text-5xl font-bold mb-4">Your Trusted <span class="gradient-text">Garment Partner</span></h1>
+      <p class="text-lg md:text-xl mb-8 max-w-2xl mx-auto">Delivering premium quality, customized garments with precision craftsmanship and timely delivery.</p>
+      <div class="flex flex-wrap justify-center gap-4 mt-8">
+        <a href="#contact" class="bg-green-600 text-white px-8 py-3 rounded-full hover:bg-green-700 transition transform hover:-translate-y-1 shadow-lg">Get in Touch</a>
+        <a href="#catalogue" class="bg-white text-green-600 border border-green-600 px-8 py-3 rounded-full hover:bg-green-50 transition transform hover:-translate-y-1 shadow-lg">View Catalogue</a>
+      </div>
+    </div>
+  </section>
 
-function stopRecording() {
-  if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
-}
+  <!-- About Section -->  
+  <section id="about" class="py-20 bg-white px-4">  
+    <div class="container mx-auto" data-aos="fade-right">  
+      <div class="text-center mb-12">
+        <h2 class="text-3xl md:text-4xl font-bold mb-2">About Us</h2>
+        <div class="w-24 h-1 bg-green-600 mx-auto"></div>
+      </div>
+      
+      <div class="flex flex-col md:flex-row gap-10 items-center">
+        <div class="md:w-1/2">
+          <div class="premium-card overflow-hidden">
+            <img src="about-image.jpg" alt="About SHE CARE" class="w-full h-80 object-cover" />
+          </div>
+        </div>
+        
+        <div class="md:w-1/2">
+          <p class="text-lg mb-6">SHE CARE – Sree Alagar Enterprises is your go-to for custom-made garments designed to fit exactly what you need—whether it's stylish uniforms, branded clothing, or everyday wear.</p>
+          <p class="mb-6">We mix quality craftsmanship with smart design and a close eye for detail to make sure every piece truly represents your brand. We're all about getting your order right and on time, with friendly, personalized service along the way.</p>
+          <div class="flex flex-wrap gap-3">
+            <div class="bg-green-50 px-4 py-2 rounded-full flex items-center gap-2">
+              <i class="fas fa-check-circle text-green-600"></i>
+              <span>Premium Materials</span>
+            </div>
+            <div class="bg-green-50 px-4 py-2 rounded-full flex items-center gap-2">
+              <i class="fas fa-check-circle text-green-600"></i>
+              <span>Timely Delivery</span>
+            </div>
+            <div class="bg-green-50 px-4 py-2 rounded-full flex items-center gap-2">
+              <i class="fas fa-check-circle text-green-600"></i>
+              <span>Custom Designs</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>  
+  </section>  
 
-function downloadRecording() {
-  stopRecording();
-}
+  <!-- Services Section -->
+  <section id="services" class="py-20 bg-gray-50 px-4">
+    <div class="container mx-auto" data-aos="fade-left">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl md:text-4xl font-bold mb-2">Our Services</h2>
+        <div class="w-24 h-1 bg-green-600 mx-auto"></div>
+        <p class="mt-4 max-w-2xl mx-auto">We offer comprehensive garment solutions tailored to your specific requirements</p>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div class="premium-card p-6">
+          <div class="text-green-600 text-4xl mb-4">
+            <i class="fas fa-building"></i>
+          </div>
+          <h3 class="text-xl font-bold mb-2">Corporate & Retail Apparel</h3>
+          <p class="text-gray-600">Professional uniforms that represent your brand with style and sophistication.</p>
+        </div>
+        
+        <div class="premium-card p-6">
+          <div class="text-green-600 text-4xl mb-4">
+            <i class="fas fa-graduation-cap"></i>
+          </div>
+          <h3 class="text-xl font-bold mb-2">School & Sports Uniforms</h3>
+          <p class="text-gray-600">Durable, comfortable uniforms designed for active students and athletes.</p>
+        </div>
+        
+        <div class="premium-card p-6">
+          <div class="text-green-600 text-4xl mb-4">
+            <i class="fas fa-tshirt"></i>
+          </div>
+          <h3 class="text-xl font-bold mb-2">Custom Embroidery & Printing</h3>
+          <p class="text-gray-600">High-quality branding solutions for your garments with precision embroidery.</p>
+        </div>
+        
+        <div class="premium-card p-6">
+          <div class="text-green-600 text-4xl mb-4">
+            <i class="fas fa-ruler-combined"></i>
+          </div>
+          <h3 class="text-xl font-bold mb-2">Tailored Sizing & Bulk Orders</h3>
+          <p class="text-gray-600">Perfect fit for everyone with bulk order efficiency and consistency.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-function saveToStorage() {
-  if (!recordedChunks.length) return;
-  const blob = new Blob(recordedChunks, { type: "video/webm" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `incident_${new Date().toISOString()}.webm`;
-  a.innerText = a.download;
-  videosList.appendChild(a);
-  recordedChunks = [];
-}
+  <!-- Achievements Section -->
+  <section id="achievements" class="py-20 bg-white text-center" data-aos="zoom-in">
+    <div class="container mx-auto">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl md:text-4xl font-bold mb-2">Our Achievements</h2>
+        <div class="w-24 h-1 bg-green-600 mx-auto"></div>
+      </div>
+      
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-8 justify-items-center text-green-600">
+        <!-- Clients -->
+        <div class="premium-card p-8">
+          <div class="text-4xl md:text-5xl font-bold mb-2">
+            <span id="clients">0</span>+
+          </div>
+          <div class="text-xl font-medium text-gray-700">Satisfied Clients</div>
+        </div>
+        
+        <!-- Orders -->
+        <div class="premium-card p-8">
+          <div class="text-4xl md:text-5xl font-bold mb-2">
+            <span id="orders">0</span>+
+          </div>
+          <div class="text-xl font-medium text-gray-700">Completed Orders</div>
+        </div>
+        
+        <!-- Years -->
+        <div class="premium-card p-8">
+          <div class="text-4xl md:text-5xl font-bold mb-2">
+            <span id="years">0</span>+
+          </div>
+          <div class="text-xl font-medium text-gray-700">Years of Excellence</div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-function toggleNightMode() {
-  document.body.classList.toggle('night');
-}
-
-function toggleSettings() {
-  const panel = document.getElementById('settingsPanel');
-  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-}
-
-function updateTimer() {
-  const interval = setInterval(() => {
-    if (!startTime) return;
-    const diff = Date.now() - startTime;
-    const mins = Math.floor(diff / 60000);
-    const secs = Math.floor((diff % 60000) / 1000);
-    timeEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-  }, 1000);
-}
-
-function setupGeolocation() {
-  if (!navigator.geolocation) return;
-  const map = L.map('map').setView([0, 0], 15);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-  const marker = L.marker([0, 0]).addTo(map);
-
-  document.getElementById('showMap').addEventListener('change', e => {
-    document.getElementById('map').style.display = e.target.checked ? 'block' : 'none';
-  });
-
-  watchId = navigator.geolocation.watchPosition(pos => {
-    const { latitude, longitude, speed } = pos.coords;
-    marker.setLatLng([latitude, longitude]);
-    map.setView([latitude, longitude], 15);
-
-    if (lastCoords) {
-      const d = getDistance(lastCoords.latitude, lastCoords.longitude, latitude, longitude);
-      totalDistance += d;
-      distanceEl.textContent = totalDistance.toFixed(2);
-      odometerEl.textContent = totalDistance.toFixed(2);
-    }
-    lastCoords = pos.coords;
-    speedEl.textContent = ((speed || 0) * 3.6).toFixed(1);
-  }, err => console.warn(err), { enableHighAccuracy: true });
-}
-
-function getDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-            Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) *
-            Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
-}
-
-  </script>
-</body>
-</html>
+  <!-- Gallery Section -->
+  <section id="gallery" class="py-20 bg-gray-50 px-4 overflow-hidden">
+    <div class="container mx-auto" data-aos="fade-up">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl md:text-4xl font-bold mb-2">Our Work Gallery</h2>
+        <div class="w-24 h-1 bg-green-600 mx-auto"></div>
+      
